@@ -66,12 +66,12 @@ router.post('/main', (req, res, next) => {
     }
     let query1 = db.query(`SELECT COUNT(*) AS count
         FROM collection_gallery a LEFT JOIN collection_img b ON a.gallery_cover = b.img_id 
-        WHERE a.gallery_del_flag = 1 AND a.gallery_name LIKE '%${param.queryname}%' OR a.gallery_tag LIKE '%${param.queryname}%' 
+        WHERE a.gallery_del_flag = 1 AND (a.gallery_name LIKE '%${param.queryname}%' OR a.gallery_tag LIKE '%${param.queryname}%') 
         AND a.gallery_type = ${param.gallerytype}
         ${desc_label}`)
     let query2 = db.query(`SELECT *,(SELECT COUNT(*) FROM collection_gallery_item WHERE gallery_id = a.gallery_id AND gallery_item_del_flag = 1) AS gallery_item_count
         FROM collection_gallery a LEFT JOIN collection_img b ON a.gallery_cover = b.img_id 
-        WHERE a.gallery_del_flag = 1 AND a.gallery_name LIKE '%${param.queryname}%' OR a.gallery_tag LIKE '%${param.queryname}%' 
+        WHERE a.gallery_del_flag = 1 AND (a.gallery_name LIKE '%${param.queryname}%' OR a.gallery_tag LIKE '%${param.queryname}%') 
         AND a.gallery_type = ${param.gallerytype}
         ${desc_label}
         LIMIT ${param.pagesize*(param.currentpage-1)},${param.pagesize}`)
@@ -160,5 +160,17 @@ router.post('/update',upload.single('imgfile'), (req, res, next) => {
     })
     }
 });
+
+//图集大类删除
+router.post('/delete', (req, res, next) => {
+    const param = req.body;
+    let query1 = db.query(`UPDATE collection_gallery SET gallery_del_flag=0 WHERE gallery_id = '${param.gallery_id}'`)
+    let query2 = db.query(`UPDATE collection_gallery_item SET gallery_item_del_flag=0 WHERE gallery_id = '${param.gallery_id}'`)
+    Promise.all([query1, query2]).then((data) => {
+        res.send(new result("小姐姐走了...", "success", 200))
+      }).catch((err) => {
+        res.send(new result(null, "小姐姐删除失败！", 500));
+      })
+})
 
 module.exports = router;
