@@ -69,7 +69,9 @@ router.post('/main', (req, res, next) => {
         WHERE a.gallery_del_flag = 1 AND (a.gallery_name LIKE '%${param.queryname}%' OR a.gallery_tag LIKE '%${param.queryname}%') 
         AND a.gallery_type = ${param.gallerytype}
         ${desc_label}`)
-    let query2 = db.query(`SELECT *,(SELECT COUNT(*) FROM collection_gallery_item WHERE gallery_id = a.gallery_id AND gallery_item_del_flag = 1) AS gallery_item_count
+    let query2 = db.query(`SELECT *,
+        (SELECT COUNT(*) FROM collection_gallery_item WHERE gallery_id = a.gallery_id AND gallery_item_del_flag = 1) AS gallery_item_count,
+        (SELECT GROUP_CONCAT(gallery_item_name) FROM collection_gallery_item WHERE gallery_id = a.gallery_id AND gallery_item_del_flag = 1) AS gallery_item_names
         FROM collection_gallery a LEFT JOIN collection_img b ON a.gallery_cover = b.img_id 
         WHERE a.gallery_del_flag = 1 AND (a.gallery_name LIKE '%${param.queryname}%' OR a.gallery_tag LIKE '%${param.queryname}%') 
         AND a.gallery_type = ${param.gallerytype}
