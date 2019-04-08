@@ -87,6 +87,37 @@ router.post('/main', (req, res, next) => {
       })
 });
 
+/*获取图集小类查询列表*/
+router.post('/main/items', (req, res, next) => {
+    const param = req.body;
+    console.log(req.body)
+    let desc_label = ''
+    if(param.querysort == '1'){
+        desc_label = 'ORDER BY CONVERT(a.gallery_item_name USING gbk) DESC'
+    }else if(param.querysort == '2'){
+        desc_label = 'ORDER BY a.gallery_item_rank DESC'
+    }else if(param.querysort == '3'){
+        desc_label = 'ORDER BY a.create_time DESC'
+    }
+    let query1 = db.query(`SELECT COUNT(*) AS count
+        FROM collection_gallery_item a LEFT JOIN collection_img b ON a.gallery_item_cover = b.img_id 
+        WHERE a.gallery_id = '${param.galleryId}' AND a.gallery_item_del_flag = 1 AND (a.gallery_item_name LIKE '%${param.queryname}%' OR a.gallery_item_tag LIKE '%${param.queryname}%') 
+        ${desc_label}`)
+    let query2 = db.query(`SELECT *
+        FROM collection_gallery_item a LEFT JOIN collection_img b ON a.gallery_item_cover = b.img_id 
+        WHERE a.gallery_id = '${param.galleryId}' AND a.gallery_item_del_flag = 1 AND (a.gallery_item_name LIKE '%${param.queryname}%' OR a.gallery_item_tag LIKE '%${param.queryname}%') 
+        ${desc_label}
+        LIMIT ${param.pagesize*(param.currentpage-1)},${param.pagesize}`)
+    Promise.all([query1, query2]).then((data) => {
+        res.send(new result({
+            total:data[0].rows[0].count || 0,
+            rows:data[1].rows || []
+        },'success',200))
+      }).catch((err) => {
+        res.send(new result(null,err,500))
+      })
+});
+
 /*图集大类新增*/
 router.post('/add',upload.single('imgfile'), (req, res, next) => {
     const param = req.body;
@@ -114,6 +145,43 @@ router.post('/add',upload.single('imgfile'), (req, res, next) => {
     db.query(`INSERT INTO collection_img VALUES ('${fileName}','${fileId}','',${nowTime},${fileSize})`).then(data => {
         db.query(`INSERT INTO collection_gallery VALUES('${galleryId}','${param.title}','${fileId}','${param.tags}',
         '${nowTime}','',${param.type},'${param.netAddress}','${param.localAddress}',${param.rank},1)`).then(data2 => {
+            res.send(new result("新增成功", "success", 200));
+        }).catch(err => {
+            res.send(new result(null, "新增小姐姐失败！", 500));
+        })
+    }).catch(err => {
+        res.send(new result(null, "小姐姐上传失败！", 500));
+    })
+    }
+});
+
+/*图集小类类新增*/
+router.post('/add/item',upload.single('imgfile'), (req, res, next) => {
+    const param = req.body;
+    console.log(req.body)
+    const fileId = uuid.v1()
+    const galleryItemId = uuid.v1()
+    const nowTime = moment().format('YYYYMMDDHHmm')
+    if(!req.file){
+        //未上传图片文件 使用默认封面 ->fileId不传
+        db.query(`INSERT INTO collection_gallery_item VALUES('${param.galleryId}','${galleryItemId}','${param.tags}','${param.title}','',
+        '','${param.netAddress}','${param.localAddress}','${nowTime}',${param.rank},1)`).then(data2 => {
+            res.send(new result("新增成功", "success", 200));
+        }).catch(err => {
+            res.send(new result(null, "新增小姐姐失败！", 500));
+        })
+    }else{
+    //1、上传图片
+    //2、新增记录
+    if (!fileType.includes(req.file.mimetype)) {
+        res.send(new result(null, "只能传小姐姐图片!", 500));
+        return
+    }
+    const fileName = req.file.filename
+    const fileSize = req.file.size
+    db.query(`INSERT INTO collection_img VALUES ('${fileName}','${fileId}','',${nowTime},${fileSize})`).then(data => {
+        db.query(`INSERT INTO collection_gallery_item VALUES('${param.galleryId}','${galleryItemId}','${param.tags}','${param.title}','',
+        '${fileId}','${param.netAddress}','${param.localAddress}','${nowTime}',${param.rank},1)`).then(data2 => {
             res.send(new result("新增成功", "success", 200));
         }).catch(err => {
             res.send(new result(null, "新增小姐姐失败！", 500));
@@ -163,12 +231,62 @@ router.post('/update',upload.single('imgfile'), (req, res, next) => {
     }
 });
 
+/*图集小类修改*/
+router.post('/update/item',upload.single('imgfile'), (req, res, next) => {
+    const param = req.body;
+    console.log(req.body)
+    const fileId = uuid.v1()
+    const nowTime = moment().format('YYYYMMDDHHmm')
+    if(!req.file){
+        //未上传图片文件 使用封面
+        db.query(`UPDATE collection_gallery_item SET gallery_item_name = '${param.title}',gallery_item_cover = '${param.imgId}',
+        gallery_item_tag='${param.tags}',create_time=${nowTime},gallery_item_net='${param.netAddress}',
+        gallery_item_local='${param.localAddress}',gallery_item_rank=${param.rank} WHERE gallery_item_id='${param.galleryId}'`)
+        .then(data2 => {
+            res.send(new result("修改成功", "success", 200));
+        }).catch(err => {
+            res.send(new result(null, "修改小姐姐失败！", 500));
+        })
+    }else{
+    //1、上传图片
+    //2、修改记录
+    if (!fileType.includes(req.file.mimetype)) {
+        res.send(new result(null, "只能传小姐姐图片!", 500));
+        return
+    }
+    const fileName = req.file.filename
+    const fileSize = req.file.size
+    db.query(`INSERT INTO collection_img VALUES ('${fileName}','${fileId}','',${nowTime},${fileSize})`).then(data => {
+        db.query(`UPDATE collection_gallery_item SET gallery_item_name = '${param.title}',gallery_item_cover = '${fileId}',
+        gallery_item_tag='${param.tags}',create_time=${nowTime},gallery_item_net='${param.netAddress}',
+        gallery_item_local='${param.localAddress}',gallery_item_rank=${param.rank} WHERE gallery_item_id='${param.galleryId}'`).then(data2 => {
+            res.send(new result("修改成功", "success", 200));
+        }).catch(err => {
+            res.send(new result(null, "修改小姐姐失败！", 500));
+        })
+    }).catch(err => {
+        res.send(new result(null, "小姐姐上传失败！", 500));
+    })
+    }
+});
+
 //图集大类删除
 router.post('/delete', (req, res, next) => {
     const param = req.body;
     let query1 = db.query(`UPDATE collection_gallery SET gallery_del_flag=0 WHERE gallery_id = '${param.gallery_id}'`)
     let query2 = db.query(`UPDATE collection_gallery_item SET gallery_item_del_flag=0 WHERE gallery_id = '${param.gallery_id}'`)
     Promise.all([query1, query2]).then((data) => {
+        res.send(new result("小姐姐走了...", "success", 200))
+      }).catch((err) => {
+        res.send(new result(null, "小姐姐删除失败！", 500));
+      })
+})
+
+//图集小类删除
+router.post('/delete/item', (req, res, next) => {
+    const param = req.body;
+    let query2 = db.query(`UPDATE collection_gallery_item SET gallery_item_del_flag=0 WHERE gallery_item_id = '${param.gallery_item_id}'`)
+    query2.then((data) => {
         res.send(new result("小姐姐走了...", "success", 200))
       }).catch((err) => {
         res.send(new result(null, "小姐姐删除失败！", 500));
