@@ -379,4 +379,17 @@ router.post('/delete/item', (req, res, next) => {
     })
 })
 
+//图集小类设为最爱，取消最爱
+router.post('/favourite', (req, res, next) => {
+    const param = req.body;
+    let if_favourite = (param.if_favourite === 1?0:1)
+    const gallery_item_id = param.gallery_item_id
+    let query2 = db.query(`UPDATE collection_gallery_item SET if_favourite=${if_favourite} WHERE gallery_item_id = '${gallery_item_id}'`)
+    query2.then((data) => {
+        res.send(new result({if_favourite,gallery_item_id}, "success", 200))
+    }).catch((err) => {
+        res.send(new result(null, "设置/取消最爱失败！", 500));
+    })
+})
+
 module.exports = router;
