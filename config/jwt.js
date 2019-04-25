@@ -15,5 +15,9 @@ module.exports = {
         return jwt.sign(param, secretKey, {
             expiresIn: 60 * 60 * 24 // 授权时效24小时
         });
+    },
+    //解码token
+    verify_token:(parma) => {
+        return jwt.verify(parma, secretKey)
     }
 }
