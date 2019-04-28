@@ -86,5 +86,61 @@ router.post('/modify/avatar', upload.single('imgfile'), (req, res, next) => {
     }
 });
 
+//修改图集大类封面
+router.post('/modify/cover', upload.single('imgfile'), (req, res, next) => {
+    const param = req.body;
+    const token = req.headers.authorization.split("Bearer")[1].trim();
+    if (!req.file) {
+        //未上传图片文件 使用默认头像
+        db.query(`select * from collection_config`).then(data => {
+            let config = {};
+            for (let item of data.rows) {
+              config[item.config_name] = item.config_contant;
+            }
+            db.query(`update collection_user set gallery_img = '${config.default_gallery_cover?config.default_gallery_cover:""}' where username = '${verify_token(token).username}'`).then(data => {
+                res.send(new result((config.default_gallery_cover?config.default_gallery_cover:""), "success", 200));
+            }).catch(err => {
+              res.send(err);
+            })
+          }).catch(err => {
+            res.send(err);
+          })
+    } else {
+        db.query(`update collection_user set gallery_img = '${req.file.originalname}' where username = '${verify_token(token).username}'`).then(data => {
+            res.send(new result("修改封面成功", "success", 200));
+        }).catch(err => {
+            res.send(err);
+        })
+    }
+});
+
+//修改图集小类封面
+router.post('/modify/cover/item', upload.single('imgfile'), (req, res, next) => {
+    const param = req.body;
+    const token = req.headers.authorization.split("Bearer")[1].trim();
+    if (!req.file) {
+        //未上传图片文件 使用默认头像
+        db.query(`select * from collection_config`).then(data => {
+            let config = {};
+            for (let item of data.rows) {
+              config[item.config_name] = item.config_contant;
+            }
+            db.query(`update collection_user set gallery_item_img = '${config.default_gallery_item_cover?config.default_gallery_item_cover:""}' where username = '${verify_token(token).username}'`).then(data => {
+                res.send(new result((config.default_gallery_cover?config.default_gallery_cover:""), "success", 200));
+            }).catch(err => {
+              res.send(err);
+            })
+          }).catch(err => {
+            res.send(err);
+          })
+    } else {
+        db.query(`update collection_user set gallery_item_img = '${req.file.originalname}' where username = '${verify_token(token).username}'`).then(data => {
+            res.send(new result("修改封面成功", "success", 200));
+        }).catch(err => {
+            res.send(err);
+        })
+    }
+});
+
 
 module.exports = router;
