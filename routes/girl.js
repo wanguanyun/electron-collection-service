@@ -170,16 +170,16 @@ router.post('/add', upload.single('imgfile'), (req, res, next) => {
 });
 
 /*图集小类类新增*/
-router.post('/add/item', upload.single('imgfile'), (req, res, next) => {
+router.post('/add/item', upload.fields([{name:'imgfile',maxCount:1},{name:'viewerfile',maxCount:10}]), (req, res, next) => {
     const param = req.body;
     console.log(req.body)
     const fileId = uuid.v1()
     const galleryItemId = uuid.v1()
     const nowTime = moment().format('YYYYMMDDHHmm')
-    if (!req.file) {
+    if (!req.files["imgfile"]) {
         //未上传图片文件 使用默认封面 ->fileId不传
         db.query(`INSERT INTO collection_gallery_item VALUES('${param.galleryId}','${galleryItemId}','${param.tags}','${param.title}','',
-        '','${param.netAddress}','${param.localAddress}','${nowTime}',${param.rank},1)`).then(data2 => {
+        '','${param.netAddress}','${param.localAddress}','${nowTime}',${param.rank},1,0)`).then(data2 => {
             res.send(new result("新增成功", "success", 200));
             //同步标签给大类
             db.query(`SELECT GROUP_CONCAT(gallery_item_tag) as gallery_item_tags FROM collection_gallery_item WHERE gallery_id= '${param.galleryId}' AND gallery_item_del_flag = 1`).then((res) => {
@@ -195,21 +195,29 @@ router.post('/add/item', upload.single('imgfile'), (req, res, next) => {
                 db.query(`UPDATE collection_gallery SET gallery_tag = '${data_arr.join(",")}' WHERE gallery_id= '${param.galleryId}'`)
                     .then((res) => {}).catch(err => {})
             }).catch(err => {})
+            if (req.files["viewerfile"]){
+                for(let item of req.files["viewerfile"]){
+                    const viewerFileId = uuid.v1()
+                    db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(()=>{
+                        db.query(`INSERT INTO collection_gallery_item_imgs VALUES ('${galleryItemId}','${viewerFileId}',${nowTime},${item.size},1)`)
+                    })
+                }
+            }
         }).catch(err => {
             res.send(new result(null, "新增小姐姐失败！", 500));
         })
     } else {
         //1、上传图片
         //2、新增记录
-        if (!fileType.includes(req.file.mimetype)) {
+        if (!fileType.includes(req.files["imgfile"][0].mimetype)) {
             res.send(new result(null, "只能传小姐姐图片!", 500));
             return
         }
-        const fileName = req.file.filename
-        const fileSize = req.file.size
+        const fileName = req.files["imgfile"][0].filename
+        const fileSize = req.files["imgfile"][0].size
         db.query(`INSERT INTO collection_img VALUES ('${fileName}','${fileId}','',${nowTime},${fileSize})`).then(data => {
             db.query(`INSERT INTO collection_gallery_item VALUES('${param.galleryId}','${galleryItemId}','${param.tags}','${param.title}','',
-        '${fileId}','${param.netAddress}','${param.localAddress}','${nowTime}',${param.rank},1)`).then(data2 => {
+        '${fileId}','${param.netAddress}','${param.localAddress}','${nowTime}',${param.rank},1,0)`).then(data2 => {
                 res.send(new result("新增成功", "success", 200));
                 //同步标签给大类
                 db.query(`SELECT GROUP_CONCAT(gallery_item_tag) as gallery_item_tags FROM collection_gallery_item WHERE gallery_id= '${param.galleryId}' AND gallery_item_del_flag = 1`).then((res) => {
@@ -225,6 +233,14 @@ router.post('/add/item', upload.single('imgfile'), (req, res, next) => {
                     db.query(`UPDATE collection_gallery SET gallery_tag = '${data_arr.join(",")}' WHERE gallery_id= '${param.galleryId}'`)
                         .then((res) => {}).catch(err => {})
                 }).catch(err => {})
+                if (req.files["viewerfile"]){
+                    for(let item of req.files["viewerfile"]){
+                        const viewerFileId = uuid.v1()
+                        db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(()=>{
+                            db.query(`INSERT INTO collection_gallery_item_imgs VALUES ('${galleryItemId}','${viewerFileId}',${nowTime},${item.size},1)`)
+                        })
+                    }
+                }
             }).catch(err => {
                 res.send(new result(null, "新增小姐姐失败！", 500));
             })
@@ -274,13 +290,14 @@ router.post('/update', upload.single('imgfile'), (req, res, next) => {
 });
 
 /*图集小类修改*/
-router.post('/update/item', upload.single('imgfile'), (req, res, next) => {
+router.post('/update/item', upload.fields([{name:'imgfile',maxCount:1},{name:'viewerfile',maxCount:10}]), (req, res, next) => {
     const param = req.body;
     console.log(req.body)
     const fileId = uuid.v1()
     const nowTime = moment().format('YYYYMMDDHHmm')
-    if (!req.file) {
-        //未上传图片文件 使用封面
+    console.log(req.files)
+    if (!req.files["imgfile"]) {
+        //未上传图片文件 使用原始封面
         db.query(`UPDATE collection_gallery_item SET gallery_item_name = '${param.title}',gallery_item_cover = '${param.imgId}',
         gallery_item_tag='${param.tags}',create_time=${nowTime},gallery_item_net='${param.netAddress}',
         gallery_item_local='${param.localAddress}',gallery_item_rank=${param.rank} WHERE gallery_item_id='${param.galleryItemId}'`)
@@ -301,18 +318,39 @@ router.post('/update/item', upload.single('imgfile'), (req, res, next) => {
                     db.query(`UPDATE collection_gallery SET gallery_tag = '${data_arr.join(",")}' WHERE gallery_id= '${param.galleryId}'`)
                         .then((res) => {}).catch(err => {})
                 }).catch(err => {})
+                //图集预览更新
+                //1 把图集小类对应的预览图都置位 删除状态
+                //2 更新 用户新的预览图状态
+                db.query(`UPDATE collection_gallery_item_imgs set del_flag = 2 where gallery_item_id = '${param.galleryItemId}'`).then(()=>{
+                    if(param.girlViewerLoaclImg && param.girlViewerLoaclImg.length > 0){
+                        let sql_temp = []
+                        for(let item of param.girlViewerLoaclImg){
+                            sql_temp.push("gallery_img = '"+ item.gallery_img+"'")
+                        }
+                        db.query(`UPDATE collection_gallery_item_imgs set del_flag = 1 where gallery_item_id = '${param.galleryItemId}' and ( ${sql_temp.join(" or ")} )`)
+                    }
+                    //用户又新上传了图集预览
+                    if (req.files["viewerfile"]){
+                        for(let item of req.files["viewerfile"]){
+                            const viewerFileId = uuid.v1()
+                            db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(()=>{
+                                db.query(`INSERT INTO collection_gallery_item_imgs VALUES ('${param.galleryItemId}','${viewerFileId}',${nowTime},${item.size},1)`)
+                            })
+                        }
+                    }
+                })
             }).catch(err => {
                 res.send(new result(null, "修改小姐姐失败！", 500));
             })
     } else {
         //1、上传图片
         //2、修改记录
-        if (!fileType.includes(req.file.mimetype)) {
+        if (!fileType.includes(req.files["imgfile"][0].mimetype)) {
             res.send(new result(null, "只能传小姐姐图片!", 500));
             return
         }
-        const fileName = req.file.filename
-        const fileSize = req.file.size
+        const fileName = req.files["imgfile"][0].filename
+        const fileSize = req.files["imgfile"][0].size
         db.query(`INSERT INTO collection_img VALUES ('${fileName}','${fileId}','',${nowTime},${fileSize})`).then(data => {
             db.query(`UPDATE collection_gallery_item SET gallery_item_name = '${param.title}',gallery_item_cover = '${fileId}',
         gallery_item_tag='${param.tags}',create_time=${nowTime},gallery_item_net='${param.netAddress}',
@@ -333,6 +371,27 @@ router.post('/update/item', upload.single('imgfile'), (req, res, next) => {
                     db.query(`UPDATE collection_gallery SET gallery_tag = '${data_arr.join(",")}' WHERE gallery_id= '${param.galleryId}'`)
                         .then((res) => {}).catch(err => {})
                 }).catch(err => {})
+                //图集预览更新
+                //1 把图集小类对应的预览图都置位 删除状态
+                //2 更新 用户新的预览图状态
+                db.query(`UPDATE collection_gallery_item_imgs set del_flag = 2 where gallery_item_id = '${param.galleryItemId}'`).then(()=>{
+                    if(param.girlViewerLoaclImg && param.girlViewerLoaclImg.length > 0){
+                        let sql_temp = []
+                        for(let item of param.girlViewerLoaclImg){
+                            sql_temp.push("gallery_img = '"+ item.gallery_img+"'")
+                        }
+                        db.query(`UPDATE collection_gallery_item_imgs set del_flag = 1 where gallery_item_id = '${param.galleryItemId}' and ( ${sql_temp.join(" or ")} )`)
+                    }
+                    //用户又新上传了图集预览
+                    if (req.files["viewerfile"]){
+                        for(let item of req.files["viewerfile"]){
+                            const viewerFileId = uuid.v1()
+                            db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(()=>{
+                                db.query(`INSERT INTO collection_gallery_item_imgs VALUES ('${param.galleryItemId}','${viewerFileId}',${nowTime},${item.size},1)`)
+                            })
+                        }
+                    }
+                })
             }).catch(err => {
                 res.send(new result(null, "修改小姐姐失败！", 500));
             })
@@ -389,6 +448,18 @@ router.post('/favourite', (req, res, next) => {
         res.send(new result({if_favourite,gallery_item_id}, "success", 200))
     }).catch((err) => {
         res.send(new result(null, "设置/取消最爱失败！", 500));
+    })
+})
+
+//图集小类预览图集合
+router.post('/item/viewer', (req, res, next) => {
+    const param = req.body;
+    let query = db.query(`SELECT * FROM collection_gallery_item_imgs a LEFT JOIN collection_img b ON a.gallery_img = b.img_id 
+    WHERE a.gallery_item_id='${param.gallery_item_id}' AND a.del_flag = 1`)
+    query.then((data) => {
+        res.send(new result(data.rows, "success", 200));
+    }).catch((err) => {
+        res.send(new result(null, "查询图集预览失败！", 500));
     })
 })
 
