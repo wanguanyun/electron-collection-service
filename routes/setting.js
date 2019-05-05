@@ -142,5 +142,23 @@ router.post('/modify/cover/item', upload.single('imgfile'), (req, res, next) => 
     }
 });
 
+//获取项目总览信息
+router.get('/project/info', (req, res, next) => {
+    //
+    let query1 = db.query(`SELECT COUNT(*) AS gallery_count FROM collection_gallery WHERE gallery_del_flag = 1`)
+    let query2 = db.query(`SELECT COUNT(*) AS gallery_item_count FROM collection_gallery_item WHERE gallery_item_del_flag = 1`)
+    let query3 = db.query(`SELECT COUNT(*) AS img_total_count,SUM(img_size) AS img_total_size FROM collection_img`)
+    Promise.all([query1, query2, query3]).then((data) => {
+        res.send(new result({
+            gallery_count: data[0].rows[0].gallery_count || 0,
+            gallery_item_count: data[1].rows[0].gallery_item_count || 0,
+            img_total_count: data[2].rows[0].img_total_count || 0,
+            img_total_size: data[2].rows[0].img_total_size || 0,
+        }, 'success', 200))
+    }).catch((err) => {
+        res.send(new result(null, err, 500))
+    })
+});
+
 
 module.exports = router;
