@@ -58,6 +58,18 @@ var upload = multer({
     }
 })
 
+//修改APP隐私模式
+router.post('/modify/appmodule', (req, res, next) => {
+    const param = req.body;
+    const token = req.headers.authorization.split("Bearer")[1].trim();
+    db.query(`update collection_user set app_module = ${param.appModule} where username = '${verify_token(token).username}'`).then(data => {
+        res.send(new result("切换隐私模式成功", "success", 200));
+    }).catch(err => {
+        res.send(err);
+    })
+
+});
+
 //修改头像 重置头像
 router.post('/modify/avatar', upload.single('imgfile'), (req, res, next) => {
     const param = req.body;
@@ -67,16 +79,16 @@ router.post('/modify/avatar', upload.single('imgfile'), (req, res, next) => {
         db.query(`select * from collection_config`).then(data => {
             let config = {};
             for (let item of data.rows) {
-              config[item.config_name] = item.config_contant;
+                config[item.config_name] = item.config_contant;
             }
             db.query(`update collection_user set default_avatar = '${config.default_avatar?config.default_avatar:""}' where username = '${verify_token(token).username}'`).then(data => {
-                res.send(new result((config.default_avatar?config.default_avatar:""), "success", 200));
+                res.send(new result((config.default_avatar ? config.default_avatar : ""), "success", 200));
             }).catch(err => {
-              res.send(err);
+                res.send(err);
             })
-          }).catch(err => {
+        }).catch(err => {
             res.send(err);
-          })
+        })
     } else {
         db.query(`update collection_user set default_avatar = '${req.file.originalname}' where username = '${verify_token(token).username}'`).then(data => {
             res.send(new result("修改头像成功", "success", 200));
@@ -95,16 +107,16 @@ router.post('/modify/cover', upload.single('imgfile'), (req, res, next) => {
         db.query(`select * from collection_config`).then(data => {
             let config = {};
             for (let item of data.rows) {
-              config[item.config_name] = item.config_contant;
+                config[item.config_name] = item.config_contant;
             }
             db.query(`update collection_user set gallery_img = '${config.default_gallery_cover?config.default_gallery_cover:""}' where username = '${verify_token(token).username}'`).then(data => {
-                res.send(new result((config.default_gallery_cover?config.default_gallery_cover:""), "success", 200));
+                res.send(new result((config.default_gallery_cover ? config.default_gallery_cover : ""), "success", 200));
             }).catch(err => {
-              res.send(err);
+                res.send(err);
             })
-          }).catch(err => {
+        }).catch(err => {
             res.send(err);
-          })
+        })
     } else {
         db.query(`update collection_user set gallery_img = '${req.file.originalname}' where username = '${verify_token(token).username}'`).then(data => {
             res.send(new result("修改封面成功", "success", 200));
@@ -123,16 +135,16 @@ router.post('/modify/cover/item', upload.single('imgfile'), (req, res, next) => 
         db.query(`select * from collection_config`).then(data => {
             let config = {};
             for (let item of data.rows) {
-              config[item.config_name] = item.config_contant;
+                config[item.config_name] = item.config_contant;
             }
             db.query(`update collection_user set gallery_item_img = '${config.default_gallery_item_cover?config.default_gallery_item_cover:""}' where username = '${verify_token(token).username}'`).then(data => {
-                res.send(new result((config.default_gallery_cover?config.default_gallery_cover:""), "success", 200));
+                res.send(new result((config.default_gallery_cover ? config.default_gallery_cover : ""), "success", 200));
             }).catch(err => {
-              res.send(err);
+                res.send(err);
             })
-          }).catch(err => {
+        }).catch(err => {
             res.send(err);
-          })
+        })
     } else {
         db.query(`update collection_user set gallery_item_img = '${req.file.originalname}' where username = '${verify_token(token).username}'`).then(data => {
             res.send(new result("修改封面成功", "success", 200));

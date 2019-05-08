@@ -34,7 +34,8 @@ router.post('/info', (req, res, next) => {
         default_avatar:data.rows[0].default_avatar,
         gallery_img:data.rows[0].gallery_img,
         gallery_item_img:data.rows[0].gallery_item_img,
-        last_login_time:data.rows[0].last_login_time
+        last_login_time:data.rows[0].last_login_time,
+        app_module:data.rows[0].app_module
       }, "success", 200));
     }
   }).catch(err => {
@@ -54,13 +55,13 @@ router.post('/register', (req, res, next) => {
     console.log(config)
     db.query(`insert into collection_user VALUES('${param.username}','${pw_hash(param.password)}','${usrId}',
     '${config.default_avatar?config.default_avatar:""}','${config.default_gallery_cover?config.default_gallery_cover:""}',
-    '${config.default_gallery_item_cover?config.default_gallery_item_cover:""}','${nowTime}','${nowTime}')`).then(data => {
+    '${config.default_gallery_item_cover?config.default_gallery_item_cover:""}','${nowTime}','${nowTime}',1)`).then(data => {
       res.send("success");
     }).catch(err => {
       res.send(err);
     })
   }).catch(err => {
-    db.query(`insert into collection_user VALUES('${param.username}','${pw_hash(param.password)}','${usrId}','','','','${nowTime}','${nowTime}')`).then(data => {
+    db.query(`insert into collection_user VALUES('${param.username}','${pw_hash(param.password)}','${usrId}','','','','${nowTime}','${nowTime}',1)`).then(data => {
       res.send("success");
     }).catch(err => {
       res.send(err);
@@ -87,7 +88,8 @@ router.post('/login', (req, res, next) => {
           default_avatar:data.rows[0].default_avatar,
           gallery_img:data.rows[0].gallery_img,
           gallery_item_img:data.rows[0].gallery_item_img,
-          last_login_time:data.rows[0].last_login_time
+          last_login_time:data.rows[0].last_login_time,
+          app_module:data.rows[0].app_module
         }, "success", 200));
         db.query(`update collection_user set new_login_time = '${nowTime}',last_login_time = '${data.rows[0].new_login_time}' WHERE userid = '${data.rows[0].userid}'`)
       } else {
