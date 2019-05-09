@@ -68,6 +68,44 @@ router.post('/register', (req, res, next) => {
     })
   })
 });
+
+//修改密码功能
+router.post('/changepw', (req, res, next) => {
+  const param = req.body;
+  const token = req.headers.authorization.split("Bearer")[1].trim();
+  const user = {
+    username: verify_token(token).username,
+    password: param.newPassword
+  }
+  db.query(`select * from collection_user WHERE username = '${verify_token(token).username}'`).then(data => {
+    if (data.rows && data.rows.length == 1) {
+      if (bcrypt.compareSync(param.oldPassword, data.rows[0].password)) {
+        //密码匹配通过
+        const token = generate_token(user);
+        console.log(data.rows)
+        db.query(`update collection_user set password = '${pw_hash(param.newPassword)}' WHERE userid = '${data.rows[0].userid}'`).then(data2 => {
+          res.send(new result({
+            token,
+            userName:data.rows[0].username,
+            userId:data.rows[0].userid,
+            default_avatar:data.rows[0].default_avatar,
+            gallery_img:data.rows[0].gallery_img,
+            gallery_item_img:data.rows[0].gallery_item_img,
+            last_login_time:data.rows[0].last_login_time,
+            app_module:data.rows[0].app_module
+          }, "success", 200));
+        }).catch(err => {
+          res.send(new result(null, '更新用户密码失败！', 500));
+        })
+      }else{
+        res.send(new result(null, '无法匹配用户密码！', 500));
+      }
+    }
+  }).catch(err =>{
+    res.send(new result(null, '获取用户信息失败！', 500));
+  })
+});
+
 router.post('/login', (req, res, next) => {
   const param = req.body;
   const nowTime = moment().format('YYYY-MM-DD HH:mm');
