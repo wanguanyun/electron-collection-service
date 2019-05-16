@@ -170,7 +170,13 @@ router.post('/add', upload.single('imgfile'), (req, res, next) => {
 });
 
 /*图集小类类新增*/
-router.post('/add/item', upload.fields([{name:'imgfile',maxCount:1},{name:'viewerfile',maxCount:10}]), (req, res, next) => {
+router.post('/add/item', upload.fields([{
+    name: 'imgfile',
+    maxCount: 1
+}, {
+    name: 'viewerfile',
+    maxCount: 10
+}]), (req, res, next) => {
     const param = req.body;
     console.log(req.body)
     const fileId = uuid.v1()
@@ -195,10 +201,10 @@ router.post('/add/item', upload.fields([{name:'imgfile',maxCount:1},{name:'viewe
                 db.query(`UPDATE collection_gallery SET gallery_tag = '${data_arr.join(",")}' WHERE gallery_id= '${param.galleryId}'`)
                     .then((res) => {}).catch(err => {})
             }).catch(err => {})
-            if (req.files["viewerfile"]){
-                for(let item of req.files["viewerfile"]){
+            if (req.files["viewerfile"]) {
+                for (let item of req.files["viewerfile"]) {
                     const viewerFileId = uuid.v1()
-                    db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(()=>{
+                    db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(() => {
                         db.query(`INSERT INTO collection_gallery_item_imgs VALUES ('${galleryItemId}','${viewerFileId}',${nowTime},${item.size},1)`)
                     })
                 }
@@ -233,10 +239,10 @@ router.post('/add/item', upload.fields([{name:'imgfile',maxCount:1},{name:'viewe
                     db.query(`UPDATE collection_gallery SET gallery_tag = '${data_arr.join(",")}' WHERE gallery_id= '${param.galleryId}'`)
                         .then((res) => {}).catch(err => {})
                 }).catch(err => {})
-                if (req.files["viewerfile"]){
-                    for(let item of req.files["viewerfile"]){
+                if (req.files["viewerfile"]) {
+                    for (let item of req.files["viewerfile"]) {
                         const viewerFileId = uuid.v1()
-                        db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(()=>{
+                        db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(() => {
                             db.query(`INSERT INTO collection_gallery_item_imgs VALUES ('${galleryItemId}','${viewerFileId}',${nowTime},${item.size},1)`)
                         })
                     }
@@ -290,7 +296,13 @@ router.post('/update', upload.single('imgfile'), (req, res, next) => {
 });
 
 /*图集小类修改*/
-router.post('/update/item', upload.fields([{name:'imgfile',maxCount:1},{name:'viewerfile',maxCount:10}]), (req, res, next) => {
+router.post('/update/item', upload.fields([{
+    name: 'imgfile',
+    maxCount: 1
+}, {
+    name: 'viewerfile',
+    maxCount: 10
+}]), (req, res, next) => {
     const param = req.body;
     console.log(req.body)
     const fileId = uuid.v1()
@@ -321,19 +333,19 @@ router.post('/update/item', upload.fields([{name:'imgfile',maxCount:1},{name:'vi
                 //图集预览更新
                 //1 把图集小类对应的预览图都置位 删除状态
                 //2 更新 用户新的预览图状态
-                db.query(`UPDATE collection_gallery_item_imgs set del_flag = 2 where gallery_item_id = '${param.galleryItemId}'`).then(()=>{
-                    if(param.girlViewerLoaclImg && param.girlViewerLoaclImg.length > 0){
+                db.query(`UPDATE collection_gallery_item_imgs set del_flag = 2 where gallery_item_id = '${param.galleryItemId}'`).then(() => {
+                    if (param.girlViewerLoaclImg && param.girlViewerLoaclImg.length > 0) {
                         let sql_temp = []
-                        for(let item of param.girlViewerLoaclImg){
-                            sql_temp.push("gallery_img = '"+ item.gallery_img+"'")
+                        for (let item of param.girlViewerLoaclImg) {
+                            sql_temp.push("gallery_img = '" + item.gallery_img + "'")
                         }
                         db.query(`UPDATE collection_gallery_item_imgs set del_flag = 1 where gallery_item_id = '${param.galleryItemId}' and ( ${sql_temp.join(" or ")} )`)
                     }
                     //用户又新上传了图集预览
-                    if (req.files["viewerfile"]){
-                        for(let item of req.files["viewerfile"]){
+                    if (req.files["viewerfile"]) {
+                        for (let item of req.files["viewerfile"]) {
                             const viewerFileId = uuid.v1()
-                            db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(()=>{
+                            db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(() => {
                                 db.query(`INSERT INTO collection_gallery_item_imgs VALUES ('${param.galleryItemId}','${viewerFileId}',${nowTime},${item.size},1)`)
                             })
                         }
@@ -374,19 +386,19 @@ router.post('/update/item', upload.fields([{name:'imgfile',maxCount:1},{name:'vi
                 //图集预览更新
                 //1 把图集小类对应的预览图都置位 删除状态
                 //2 更新 用户新的预览图状态
-                db.query(`UPDATE collection_gallery_item_imgs set del_flag = 2 where gallery_item_id = '${param.galleryItemId}'`).then(()=>{
-                    if(param.girlViewerLoaclImg && param.girlViewerLoaclImg.length > 0){
+                db.query(`UPDATE collection_gallery_item_imgs set del_flag = 2 where gallery_item_id = '${param.galleryItemId}'`).then(() => {
+                    if (param.girlViewerLoaclImg && param.girlViewerLoaclImg.length > 0) {
                         let sql_temp = []
-                        for(let item of param.girlViewerLoaclImg){
-                            sql_temp.push("gallery_img = '"+ item.gallery_img+"'")
+                        for (let item of param.girlViewerLoaclImg) {
+                            sql_temp.push("gallery_img = '" + item.gallery_img + "'")
                         }
                         db.query(`UPDATE collection_gallery_item_imgs set del_flag = 1 where gallery_item_id = '${param.galleryItemId}' and ( ${sql_temp.join(" or ")} )`)
                     }
                     //用户又新上传了图集预览
-                    if (req.files["viewerfile"]){
-                        for(let item of req.files["viewerfile"]){
+                    if (req.files["viewerfile"]) {
+                        for (let item of req.files["viewerfile"]) {
                             const viewerFileId = uuid.v1()
-                            db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(()=>{
+                            db.query(`INSERT INTO collection_img VALUES ('${item.filename}','${viewerFileId}','',${nowTime},${item.size})`).then(() => {
                                 db.query(`INSERT INTO collection_gallery_item_imgs VALUES ('${param.galleryItemId}','${viewerFileId}',${nowTime},${item.size},1)`)
                             })
                         }
@@ -401,16 +413,35 @@ router.post('/update/item', upload.fields([{name:'imgfile',maxCount:1},{name:'vi
     }
 });
 
-//图集大类删除
+//图集大类删除 girlCheck：false   combineGirlCheck：true 连带小类 / combineGirlCheck：false 小类合并
+//图集大类合并 girlCheck：true
 router.post('/delete', (req, res, next) => {
     const param = req.body;
-    let query1 = db.query(`UPDATE collection_gallery SET gallery_del_flag=0 WHERE gallery_id = '${param.gallery_id}'`)
-    let query2 = db.query(`UPDATE collection_gallery_item SET gallery_item_del_flag=0 WHERE gallery_id = '${param.gallery_id}'`)
-    Promise.all([query1, query2]).then((data) => {
-        res.send(new result("小姐姐走了...", "success", 200))
-    }).catch((err) => {
-        res.send(new result(null, "小姐姐删除失败！", 500));
-    })
+    let query1 = null;
+    if(!param.girlCheck){
+        //图集大类删除操作
+        query1 = db.query(`UPDATE collection_gallery SET gallery_del_flag=0 WHERE gallery_id = '${param.gallery_id}'`)
+    }
+    let query2 = null;
+    if(param.combineGirlCheck){
+        //连带小类一并删除
+        query2 = db.query(`UPDATE collection_gallery_item SET gallery_item_del_flag=0 WHERE gallery_id = '${param.gallery_id}'`)
+    }else{
+        query2 = db.query(`UPDATE collection_gallery_item SET gallery_id='${param.combineGirlId}' WHERE gallery_id = '${param.gallery_id}'`)
+    }
+    if(query1){
+        Promise.all([query1, query2]).then((data) => {
+            res.send(new result("小姐姐走了...", "success", 200))
+        }).catch((err) => {
+            res.send(new result(null, "小姐姐删除失败！", 500));
+        })
+    }else{
+        query2.then((data) => {
+            res.send(new result("小姐姐合并成功！", "success", 200))
+        }).catch((err) => {
+            res.send(new result(null, "小姐姐合并失败！", 500));
+        })
+    }
 })
 
 //图集小类删除
@@ -438,14 +469,42 @@ router.post('/delete/item', (req, res, next) => {
     })
 })
 
+//图集小类移动
+router.post('/move/item', (req, res, next) => {
+    const param = req.body;
+    let query2 = db.query(`UPDATE collection_gallery_item SET gallery_id='${param.combineGirlId}' WHERE gallery_id = '${param.gallery_id}' AND gallery_item_id = '${param.gallery_item_id}'`)
+    query2.then((data) => {
+        res.send(new result("移动小姐姐成功", "success", 200))
+        //同步标签给大类
+        db.query(`SELECT GROUP_CONCAT(gallery_item_tag) as gallery_item_tags FROM collection_gallery_item WHERE gallery_id= '${param.combineGirlId}' AND gallery_item_del_flag = 1`).then((res) => {
+            let tags = res.rows[0].gallery_item_tags ? res.rows[0].gallery_item_tags : ''
+            let dataSet = new Set()
+            let data_arr = []
+            tags.split(",").forEach(item => {
+                dataSet.add(item)
+            })
+            for (let item of dataSet) {
+                data_arr.push(item)
+            }
+            db.query(`UPDATE collection_gallery SET gallery_tag = '${data_arr.join(",")}' WHERE gallery_id= '${param.combineGirlId}'`)
+                .then((res) => {}).catch(err => {})
+        }).catch(err => {})
+    }).catch((err) => {
+        res.send(new result(null, "小姐姐移动失败！", 500));
+    })
+})
+
 //图集小类设为最爱，取消最爱
 router.post('/favourite', (req, res, next) => {
     const param = req.body;
-    let if_favourite = (param.if_favourite === 1?0:1)
+    let if_favourite = (param.if_favourite === 1 ? 0 : 1)
     const gallery_item_id = param.gallery_item_id
     let query2 = db.query(`UPDATE collection_gallery_item SET if_favourite=${if_favourite} WHERE gallery_item_id = '${gallery_item_id}'`)
     query2.then((data) => {
-        res.send(new result({if_favourite,gallery_item_id}, "success", 200))
+        res.send(new result({
+            if_favourite,
+            gallery_item_id
+        }, "success", 200))
     }).catch((err) => {
         res.send(new result(null, "设置/取消最爱失败！", 500));
     })
@@ -461,6 +520,28 @@ router.post('/item/viewer', (req, res, next) => {
     }).catch((err) => {
         res.send(new result(null, "查询图集预览失败！", 500));
     })
+})
+
+//合并移动图集大类列表
+router.post('/gallery/combine/list', (req, res, next) => {
+    const param = req.body;
+    if (param.galleryId) {
+        //删除本图集合并至其他图集->查询除了本图集的大类
+        let query = db.query(`SELECT gallery_id,gallery_name,gallery_type FROM collection_gallery WHERE gallery_id !='${param.galleryId}' AND gallery_del_flag = 1`)
+        query.then((data) => {
+            res.send(new result(data.rows, "success", 200));
+        }).catch((err) => {
+            res.send(new result(null, "获取图集选择列表失败", 500));
+        })
+    } else {
+        //图集小类移动至其他大类中->查询所有图集大类
+        let query = db.query(`SELECT gallery_id,gallery_name,gallery_type FROM collection_gallery WHERE gallery_del_flag = 1`)
+        query.then((data) => {
+            res.send(new result(data.rows, "success", 200));
+        }).catch((err) => {
+            res.send(new result(null, "获取图集选择列表失败", 500));
+        })
+    }
 })
 
 module.exports = router;
