@@ -35,7 +35,9 @@ router.post('/info', (req, res, next) => {
         gallery_img:data.rows[0].gallery_img,
         gallery_item_img:data.rows[0].gallery_item_img,
         last_login_time:data.rows[0].last_login_time,
-        app_module:data.rows[0].app_module
+        app_module:data.rows[0].app_module,
+        default_dashboard_item_number:data.rows[0].default_dashboard_item_number,
+        default_dashboard_number:data.rows[0].default_dashboard_number,
       }, "success", 200));
     }
   }).catch(err => {
@@ -55,13 +57,14 @@ router.post('/register', (req, res, next) => {
     console.log(config)
     db.query(`insert into collection_user VALUES('${param.username}','${pw_hash(param.password)}','${usrId}',
     '${config.default_avatar?config.default_avatar:""}','${config.default_gallery_cover?config.default_gallery_cover:""}',
-    '${config.default_gallery_item_cover?config.default_gallery_item_cover:""}','${nowTime}','${nowTime}',1)`).then(data => {
+    '${config.default_gallery_item_cover?config.default_gallery_item_cover:""}','${nowTime}','${nowTime}',1,
+    '${config.default_dashboard_item_number?config.default_dashboard_item_number:""}','${config.default_dashboard_number?config.default_dashboard_number:""}')`).then(data => {
       res.send("success");
     }).catch(err => {
       res.send(err);
     })
   }).catch(err => {
-    db.query(`insert into collection_user VALUES('${param.username}','${pw_hash(param.password)}','${usrId}','','','','${nowTime}','${nowTime}',1)`).then(data => {
+    db.query(`insert into collection_user VALUES('${param.username}','${pw_hash(param.password)}','${usrId}','','','','${nowTime}','${nowTime}',1,10,10)`).then(data => {
       res.send("success");
     }).catch(err => {
       res.send(err);
@@ -92,7 +95,9 @@ router.post('/changepw', (req, res, next) => {
             gallery_img:data.rows[0].gallery_img,
             gallery_item_img:data.rows[0].gallery_item_img,
             last_login_time:data.rows[0].last_login_time,
-            app_module:data.rows[0].app_module
+            app_module:data.rows[0].app_module,
+            default_dashboard_item_number:data.rows[0].default_dashboard_item_number,
+            default_dashboard_number:data.rows[0].default_dashboard_number,
           }, "success", 200));
         }).catch(err => {
           res.send(new result(null, '更新用户密码失败！', 500));
@@ -114,7 +119,6 @@ router.post('/login', (req, res, next) => {
     password: param.password
   }
   db.query(`select * from collection_user WHERE username = '${user.username}'`).then(data => {
-    console.log(data.rows[0])
     if (data.rows && data.rows.length == 1) {
       if (bcrypt.compareSync(user.password, data.rows[0].password)) {
         //密码匹配通过
@@ -127,7 +131,9 @@ router.post('/login', (req, res, next) => {
           gallery_img:data.rows[0].gallery_img,
           gallery_item_img:data.rows[0].gallery_item_img,
           last_login_time:data.rows[0].last_login_time,
-          app_module:data.rows[0].app_module
+          app_module:data.rows[0].app_module,
+          default_dashboard_item_number:data.rows[0].default_dashboard_item_number,
+          default_dashboard_number:data.rows[0].default_dashboard_number,
         }, "success", 200));
         db.query(`update collection_user set new_login_time = '${nowTime}',last_login_time = '${data.rows[0].new_login_time}' WHERE userid = '${data.rows[0].userid}'`)
       } else {

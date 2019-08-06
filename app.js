@@ -13,6 +13,7 @@ var usersRouter = require('./routes/users');
 var imgRouter = require('./routes/image');
 var girlRouter = require('./routes/girl');
 var settingRouter = require('./routes/setting');
+var dashboardRouter = require('./routes/dashboard');
 
 var app = express();
 
@@ -50,6 +51,7 @@ app.use('/users', usersRouter);
 app.use('/img', imgRouter);
 app.use('/girl', girlRouter);
 app.use('/setting', settingRouter);
+app.use('/dashboard', dashboardRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

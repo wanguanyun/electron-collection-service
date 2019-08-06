@@ -67,7 +67,17 @@ router.post('/modify/appmodule', (req, res, next) => {
     }).catch(err => {
         res.send(err);
     })
+});
 
+//修改首页图集大/小类展示个数
+router.post('/modify/dashboard/number', (req, res, next) => {
+    const param = req.body;
+    const token = req.headers.authorization.split("Bearer")[1].trim();
+    db.query(`update collection_user set default_dashboard_item_number = ${param.default_dashboard_item_number},default_dashboard_number = ${param.default_dashboard_number} where username = '${verify_token(token).username}'`).then(data => {
+        res.send(new result("更新首页配置成功", "success", 200));
+    }).catch(err => {
+        res.send(err);
+    })
 });
 
 //修改头像 重置头像
