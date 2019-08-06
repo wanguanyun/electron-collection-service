@@ -132,6 +132,37 @@ router.post('/main/items', (req, res, next) => {
     })
 });
 
+/*获取所有图集小类列表*/
+router.post('/main/allitems', (req, res, next) => {
+    const param = req.body;
+    console.log(req.body)
+    let desc_label = ''
+    if (param.querysort == '1') {
+        desc_label = 'ORDER BY CONVERT(a.gallery_item_name USING gbk) DESC'
+    } else if (param.querysort == '2') {
+        desc_label = 'ORDER BY a.gallery_item_rank DESC'
+    } else if (param.querysort == '3') {
+        desc_label = 'ORDER BY a.create_time DESC'
+    }
+    let query1 = db.query(`SELECT COUNT(*) AS count
+        FROM collection_gallery_item a LEFT JOIN collection_img b ON a.gallery_item_cover = b.img_id 
+        WHERE a.gallery_item_del_flag = 1 AND (a.gallery_item_name LIKE '%${param.queryname}%' OR a.gallery_item_tag LIKE '%${param.queryname}%') 
+        ${desc_label}`)
+    let query2 = db.query(`SELECT *
+        FROM collection_gallery_item a LEFT JOIN collection_img b ON a.gallery_item_cover = b.img_id 
+        WHERE a.gallery_item_del_flag = 1 AND (a.gallery_item_name LIKE '%${param.queryname}%' OR a.gallery_item_tag LIKE '%${param.queryname}%') 
+        ${desc_label}
+        LIMIT ${param.pagesize*(param.currentpage-1)},${param.pagesize}`)
+    Promise.all([query1, query2]).then((data) => {
+        res.send(new result({
+            total: data[0].rows[0].count || 0,
+            rows: data[1].rows || []
+        }, 'success', 200))
+    }).catch((err) => {
+        res.send(new result(null, err, 500))
+    })
+});
+
 /*图集大类新增*/
 router.post('/add', upload.single('imgfile'), (req, res, next) => {
     const param = req.body;
