@@ -163,6 +163,23 @@ router.post('/main/allitems', (req, res, next) => {
     })
 });
 
+/*获取所有图集小类最爱列表*/
+router.post('/main/favourite/allitems', (req, res, next) => {
+    const param = req.body;
+    console.log(req.body)
+   db.query(`SELECT *
+        FROM collection_gallery_item a LEFT JOIN collection_img b ON a.gallery_item_cover = b.img_id 
+        WHERE a.gallery_item_del_flag = 1 and a.if_favourite = 1 
+        ORDER BY CONVERT(a.gallery_item_name USING gbk) DESC
+        LIMIT ${param.pagesize*(param.currentpage-1)},${param.pagesize}`).then((data) => {
+        res.send(new result({
+            rows: data.rows || []
+        }, 'success', 200))
+    }).catch((err) => {
+        res.send(new result(null, err, 500))
+    })
+});
+
 /*图集大类新增*/
 router.post('/add', upload.single('imgfile'), (req, res, next) => {
     const param = req.body;
