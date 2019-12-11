@@ -19,6 +19,7 @@ var wgyblogRouter = require('./routes/wgyblog');
 var mMediaRouter = require('./routes/m_media')
 var mCategory = require('./routes/m_category')
 var mTag = require('./routes/m_tag')
+var mArticle = require('./routes/m_article')
 
 var app = express();
 
@@ -62,6 +63,7 @@ app.use('/wgyblog',wgyblogRouter)
 app.use('/m_media',mMediaRouter)
 app.use('/m_category',mCategory)
 app.use('/m_tag',mTag)
+app.use('/m_article',mArticle)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

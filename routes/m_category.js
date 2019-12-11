@@ -58,11 +58,22 @@ router.post('/all', (req, res, next) => {
     FROM blog_category
     WHERE status = 1 
     and name Like '%${param.queryName}%'`)
-    let query2 = db.query(`SELECT *
+    let query2 = null
+    if (param.currentPage === -1) {
+        //查询所有分类
+        query2 = db.query(`SELECT *
     FROM blog_category
     WHERE status = 1 
-    and name Like '%${param.queryName}%'
+    and name Like '%${param.queryName}%'`)
+    } else {
+        query2 = db.query(`SELECT a.*,COUNT(article_id) AS article_count
+    FROM blog_category a LEFT JOIN blog_article_category b
+    ON a.id = b.category_id
+    WHERE a.status = 1 
+    and a.name Like '%${param.queryName}%'
+    GROUP BY a.name
     LIMIT ${param.pageSize*(param.currentPage-1)},${param.pageSize}`)
+    }
     Promise.all([query1, query2]).then((data) => {
         res.send(new result({
             total: data[0].rows[0].count || 0,
@@ -76,11 +87,17 @@ router.post('/all', (req, res, next) => {
 router.post('/add', (req, res, next) => {
     const param = req.body;
     let id = uuid.v1()
-    db.query(`INSERT INTO blog_category VALUES ('${id}','${param.name}','${param.remark}',1)`).then((data) => {
-        res.send(new result(null, "新增成功", 200));
-    }).catch(err => {
-        console.log(err)
-        res.send(new result(null, "新增失败", 500));
+    db.query(`select * from blog_category WHERE name='${param.name}'`).then(data => {
+        if(data.rows.length > 0){
+            res.send(new result(null, "该类别已存在!", 500));
+        }else{
+            db.query(`INSERT INTO blog_category VALUES ('${id}','${param.name}','${param.remark}',1,2)`).then((data) => {
+                res.send(new result(null, "新增成功", 200));
+            }).catch(err => {
+                console.log(err)
+                res.send(new result(null, "新增失败", 500));
+            })
+        }
     })
 });
 
@@ -88,15 +105,27 @@ router.post('/delete', (req, res, next) => {
     const param = req.body;
     let categoryLists = param.categoryLists
     let _sql = []
-    for(let item of categoryLists){
+    let _sql2 = []
+    for (let item of categoryLists) {
         _sql.push(`id='${item}'`)
+        _sql2.push(`category_id='${item}'`)
     }
-    db.query(`UPDATE blog_category SET status = 2 WHERE (${_sql.join(" or ")})`).then((data) => {
-        res.send(new result(null, "删除成功", 200));
-    }).catch(err => {
-        console.log(err)
-        res.send(new result(null, "删除失败", 500));
-    })
+    if(!categoryLists||categoryLists.length === 0){
+        res.send(new result(null, "未选择类别删除", 500));
+    }else{
+        db.query(`UPDATE blog_category SET status = 2 WHERE (${_sql.join(" or ")})`).then((data) => {
+            //把对应文章分类改为默认
+            db.query(`DELETE FROM blog_article_category WHERE (${_sql2.join(" or ")})`).then(data2=>{
+                res.send(new result(null, "删除成功", 200));
+            }).catch(err => {
+                console.log(err)
+                res.send(new result(null, "删除失败", 500));
+            })
+        }).catch(err => {
+            console.log(err)
+            res.send(new result(null, "删除失败", 500));
+        })
+    }
 });
 
 router.post('/update', (req, res, next) => {
