@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser')
+var request = require("request");
 var multer = require('multer');
 var fs = require('fs');
 var jwt = require('jsonwebtoken'); // 使用jwt签名
@@ -10,6 +11,7 @@ var uuid = require('node-uuid');
 
 var router = express.Router();
 const fileType = ['image/jpeg', 'image/pjpeg', 'image/gif', 'image/png', 'image/x-png']
+const fileTypeSimple = ['jpg','jepg','gif','png','bmp']
 let result = require('../config/result'); //返回数据统一model
 const db = require('../config/db');
 const {
@@ -66,7 +68,7 @@ var upload = multer({
 
 router.get('/img/:imgname', function (req, res) {
     //第二个参数 highWaterMark 最高水位线,默认最多读取10M(1:64K)
-    const stream = fs.createReadStream('wgyblog_upload/' + req.params.imgname, {
+    const stream = fs.createReadStream(uploadFolder + req.params.imgname, {
         highWaterMark: 160
     }); //获取图片的文件名
     var responseData = []; //存储文件流
@@ -100,7 +102,7 @@ router.post('/upload', upload.single('myImg'), (req, res, next) => {
     const fileName = req.file.filename
     const fileSize = req.file.size
     const nowTime = moment().format('YYYYMMDDHHmm')
-    db.query(`INSERT INTO blog_img VALUES ('${fileId}','${fileType}','${nowTime}','${fileName}',${fileSize},'${verify_token(token).username}','',1)`).then(data => {
+    db.query(`INSERT INTO blog_img VALUES ('${fileId}','${fileType}','${nowTime}','${fileName}',${fileSize},'${verify_token(token).username}','',1,'local','')`).then(data => {
         res.send(new result({
                         fileId,
                         upload_user:verify_token(token).username,
@@ -112,6 +114,40 @@ router.post('/upload', upload.single('myImg'), (req, res, next) => {
     }).catch(err => {
         res.send(null, "小姐姐上传失败！", 500);
     })
+});
+
+//图片上传
+router.post('/upload/net', (req, res, next) => {
+    let url = req.body.url
+    if(url && /^((https|http|ftp|rtsp|mms)?:\/\/)[^\s]+/g.test(url) && fileTypeSimple.includes(url.split('.')[url.split('.').length-1])){
+        //校验url是不是图片地址
+        //开始写入图片
+        const name = url.split("/")[url.split("/").length - 1]
+        new Promise( (reslove,reject) => {
+            let writeStream = request(url)
+            writeStream.pipe(fs.createWriteStream(`${uploadFolder}/${name}`))
+            writeStream.on('error',function(err){
+                writeStream.end();
+                reject()
+            })
+            writeStream.on('end', function (response) {
+                writeStream.end();
+                reslove()
+            });
+        }).then(()=>{
+            const token = req.headers.authorization.split("Bearer")[1].trim()
+            var fileId = uuid.v1()
+            const nowTime = moment().format('YYYYMMDDHHmm')
+            db.query(`INSERT INTO blog_img VALUES ('${fileId}','','${nowTime}','${name}',null,'${verify_token(token).username}','',1,'net','${url}')`).then(data => {
+                res.send(new result(null, "网络图片备份成功", 200));
+            })
+        }).catch(err=>{
+            res.send(new result(null, "网络图片写入失败", 500));
+        })
+    
+    }else{
+        res.send(new result(null, "网络图片地址解析失败", 500));
+    }
 });
 
 
@@ -130,7 +166,7 @@ router.post('/uploads', upload.array('myImgs', 5), (req, res, next) => {
                 let fileSize = item.size
                 let fileType = item.mimetype
                 const nowTime = moment().format('YYYYMMDDHHmm')
-                await db.query(`INSERT INTO blog_img VALUES ('${fileId}','${fileType}','${nowTime}','${fileName}',${fileSize},'${verify_token(token).username}','',1)`).then(res => {
+                await db.query(`INSERT INTO blog_img VALUES ('${fileId}','${fileType}','${nowTime}','${fileName}',${fileSize},'${verify_token(token).username}','',1,'local','')`).then(res => {
                     successUploadImgList.push({
                         fileId,
                         upload_user:verify_token(token).username,
@@ -157,9 +193,9 @@ router.post('/img/batchdelete', (req, res, next) => {
     }
     db.query(`UPDATE blog_img SET status = 2 WHERE (${_sql.join(" or ")})`)
     for(let item of selectedImgLists){
-        if(fs.existsSync(`wgyblog_upload/${item}`)) {
+        if(fs.existsSync(`${uploadFolder}/${item}`)) {
             //判断文件是否存在
-            fs.unlink(`wgyblog_upload/${item}`,function(error){
+            fs.unlink(`${uploadFolder}/${item}`,function(error){
                 if(error){
                     console.log(error);
                     return false;
@@ -169,6 +205,17 @@ router.post('/img/batchdelete', (req, res, next) => {
         }
     }
     res.send(new result(null, "操作成功", 200));
+});
+
+//读取博客配置
+router.get('/config', (req, res, next) => {
+    db.query(`select * from blog_config`).then(data => {
+        let config = {};
+        for (let item of data.rows) {
+          config[item.config_name] = item.config_contant;
+        }
+        res.send(new result(config, "success", 200));
+    })
 });
 
 module.exports = router;

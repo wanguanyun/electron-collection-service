@@ -54,7 +54,7 @@ var upload = multer({
 
 router.get('/:imgname', function (req, res) {
     //第二个参数 highWaterMark 最高水位线,默认最多读取10M(1:64K)
-    const stream = fs.createReadStream('upload/' + req.params.imgname, {
+    const stream = fs.createReadStream(uploadFolder + req.params.imgname, {
         highWaterMark: 160
     }); //获取图片的文件名
     var responseData = []; //存储文件流

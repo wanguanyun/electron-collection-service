@@ -94,8 +94,8 @@ router.post('/all', (req, res, next) => {
         LEFT JOIN (SELECT aa.*,bb.name FROM blog_article_category AS aa LEFT JOIN blog_category AS bb ON aa.category_id = bb.id) AS b ON a.id = b.article_id
         WHERE a.title LIKE "%${queryName}%" 
         ${status?('AND a.status ='+status):'AND a.status <> 3'}
-        ${dateQuery_sql} GROUP BY a.id) AS c 
-        ${categoryQuery_sql} LIMIT ${pageSize*(currentPage-1)},${pageSize}`)
+        ${dateQuery_sql} GROUP BY a.id) AS c
+        ${categoryQuery_sql} ORDER BY c.release_date DESC LIMIT ${pageSize*(currentPage-1)},${pageSize}`)
     Promise.all([query1, query2]).then((data) => {
         res.send(new result({
             total: data[0].rows[0].count || 0,
