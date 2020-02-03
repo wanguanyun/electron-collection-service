@@ -104,7 +104,7 @@ router.post('/upload', upload.single('myImg'), (req, res, next) => {
     const nowTime = moment().format('YYYYMMDDHHmm')
     db.query(`INSERT INTO blog_img VALUES ('${fileId}','${fileType}','${nowTime}','${fileName}',${fileSize},'${verify_token(token).username}','',1,'local','')`).then(data => {
         res.send(new result({
-                        fileId,
+                        id:fileId,
                         upload_user:verify_token(token).username,
                         fileName,
                         fileType,
@@ -139,7 +139,14 @@ router.post('/upload/net', (req, res, next) => {
             var fileId = uuid.v1()
             const nowTime = moment().format('YYYYMMDDHHmm')
             db.query(`INSERT INTO blog_img VALUES ('${fileId}','','${nowTime}','${name}',null,'${verify_token(token).username}','',1,'net','${url}')`).then(data => {
-                res.send(new result(null, "网络图片备份成功", 200));
+                res.send(new result({
+                    id:fileId,
+                    upload_user:verify_token(token).username,
+                    fileName:name,
+                    fileType:'',
+                    fileSize:null,
+                    upload_time:nowTime
+                }, "success", 200));
             })
         }).catch(err=>{
             res.send(new result(null, "网络图片写入失败", 500));
@@ -168,7 +175,7 @@ router.post('/uploads', upload.array('myImgs', 5), (req, res, next) => {
                 const nowTime = moment().format('YYYYMMDDHHmm')
                 await db.query(`INSERT INTO blog_img VALUES ('${fileId}','${fileType}','${nowTime}','${fileName}',${fileSize},'${verify_token(token).username}','',1,'local','')`).then(res => {
                     successUploadImgList.push({
-                        fileId,
+                        id:fileId,
                         upload_user:verify_token(token).username,
                         fileName,
                         fileType,

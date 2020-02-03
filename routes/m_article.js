@@ -106,6 +106,23 @@ router.post('/all', (req, res, next) => {
     })
 })
 
+//文章详情查询
+router.post('/info', (req, res, next) => {
+    const param = req.body;
+    let query1 = db.query(`SELECT a.id AS id,a.title AS title,a.content AS content,a.tag AS tag,a.status AS status,a.if_front AS if_front,a.cover_img AS cover_img,
+    a.summary AS summary,a.if_allow_comment AS if_allow_comment, b.id AS img_id,b.name AS name,b.net_url AS net_url,b.file_type AS file_type
+     FROM blog_article AS a LEFT JOIN blog_img AS b ON a.cover_img=b.id WHERE a.id = ${param.id}`)
+    let query2 = db.query(`SELECT * FROM blog_article_category AS a LEFT JOIN blog_category AS b ON a.category_id=b.id WHERE a.article_id=${param.id}`)
+    Promise.all([query1, query2]).then((data) => {
+        res.send(new result({
+            info: data[0].rows && data[0].rows.length?data[0].rows[0]:null,
+            category: data[1].rows || []
+        }, 'success', 200))
+    }).catch((err) => {
+        res.send(new result(null, err, 500))
+    })
+})
+
 router.post('/delete', (req, res, next) => {
     const param = req.body;
     let articleLists = param.articleLists
@@ -169,8 +186,29 @@ router.post('/add', (req, res, next) => {
         summary = param.content.replace(/\n[\s]*/g, '').replace(/<code.*?code>/g, '').replace(/<[^<>]*>/g, '').substr(0, 300) + "..."
         summary = summary.replace(/\'/g, '\'\'').replace(/\\/g, "&#92;");
     }
-    // db.query(`DELETE FROM blog_article_category WHERE article_id=''`)
-    db.query(`INSERT INTO blog_article VALUES (NULL,'${title}','${content}','${author}','${tag}',${release_date},${status},
+    if(param.id) {
+        //更新状态
+        db.query(`UPDATE blog_article SET title='${title}',content='${content}',author='${author}',tag='${tag}',release_date=${release_date},
+        status=${status},if_front=${if_front},cover_img='${cover_img}',summary='${summary}',if_allow_comment=${if_allow_comment} 
+        WHERE id=${param.id}`).then(data => {
+        //修改类别关联表
+        db.query(`DELETE FROM blog_article_category WHERE article_id = ${param.id}`).then(()=>{
+            db.query(`INSERT INTO blog_article_category VALUES ${category.map(item => {
+                return "('"+param.id+"','"+item+"')"
+            }).join(",")}`).then(data2 => {
+                res.send(new result(null, "更新成功", 200));
+            }).catch(err => {
+                res.send(new result(null, "更新失败", 500));
+            })
+        }).catch(()=>{
+            res.send(new result(null, "更新类别失败", 500));
+        })
+    }).catch(err => {
+        console.log(err)
+        res.send(new result(null, "更新失败", 500));
+    })
+    }else{
+        db.query(`INSERT INTO blog_article VALUES (NULL,'${title}','${content}','${author}','${tag}',${release_date},${status},
     ${if_front},'${cover_img}','${summary}',${if_allow_comment},'')`).then(data => {
         //新增类别关联表
         db.query(`INSERT INTO blog_article_category VALUES ${category.map(item => {
@@ -184,6 +222,7 @@ router.post('/add', (req, res, next) => {
         console.log(err)
         res.send(new result(null, "新增失败", 500));
     })
+    }
 });
 
 
