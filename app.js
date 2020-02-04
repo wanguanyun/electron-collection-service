@@ -50,7 +50,7 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 // express-jwt中间件帮我们自动做了token的验证以及错误处理，所以一般情况下我们按照格式书写就没问题，其中unless放的就是你想要不检验token的api。
-app.use(jwt({ secret: secretKey}).unless({path: ['/users/login','/users/register','/wgyblog/config',/\/img/i,/\/wgyblog\/img/i]}));
+app.use(jwt({ secret: secretKey}).unless({path: ['/users/login','/users/register','/m_article/all','/m_article/info','/wgyblog/config',/\/img/i,/\/wgyblog\/img/i]}));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);

@@ -88,14 +88,15 @@ router.post('/all', (req, res, next) => {
         ${dateQuery_sql} GROUP BY a.id) AS c 
         ${categoryQuery_sql}`)
     //查询所有状态的
-    let query2 = db.query(`SELECT * FROM (SELECT a.id,a.title,a.author,a.tag,a.release_date,a.status,
+    let query2 = db.query(`SELECT * FROM (SELECT * FROM (SELECT a.id,a.title,a.author,a.tag,a.release_date,a.status,
         a.if_front,a.cover_img,a.summary,a.if_allow_comment,GROUP_CONCAT(DISTINCT(b.category_id)) AS category_id,
         GROUP_CONCAT(DISTINCT(b.name)) AS category FROM blog_article AS a 
         LEFT JOIN (SELECT aa.*,bb.name FROM blog_article_category AS aa LEFT JOIN blog_category AS bb ON aa.category_id = bb.id) AS b ON a.id = b.article_id
         WHERE a.title LIKE "%${queryName}%" 
         ${status?('AND a.status ='+status):'AND a.status <> 3'}
         ${dateQuery_sql} GROUP BY a.id) AS c
-        ${categoryQuery_sql} ORDER BY c.release_date DESC LIMIT ${pageSize*(currentPage-1)},${pageSize}`)
+        ${categoryQuery_sql} ORDER BY c.release_date DESC LIMIT ${pageSize*(currentPage-1)},${pageSize}) AS d LEFT JOIN (SELECT id AS img_id,name,file_type,net_url FROM blog_img) 
+        AS e ON d.cover_img = e.img_id`)
     Promise.all([query1, query2]).then((data) => {
         res.send(new result({
             total: data[0].rows[0].count || 0,
@@ -109,9 +110,9 @@ router.post('/all', (req, res, next) => {
 //文章详情查询
 router.post('/info', (req, res, next) => {
     const param = req.body;
-    let query1 = db.query(`SELECT a.id AS id,a.title AS title,a.content AS content,a.tag AS tag,a.status AS status,a.if_front AS if_front,a.cover_img AS cover_img,
+    let query1 = db.query(`SELECT a.id AS id,a.release_date AS release_date,a.title AS title,a.content AS content,a.tag AS tag,a.status AS status,a.if_front AS if_front,a.cover_img AS cover_img,
     a.summary AS summary,a.if_allow_comment AS if_allow_comment, b.id AS img_id,b.name AS name,b.net_url AS net_url,b.file_type AS file_type
-     FROM blog_article AS a LEFT JOIN blog_img AS b ON a.cover_img=b.id WHERE a.id = ${param.id}`)
+     FROM blog_article AS a LEFT JOIN blog_img AS b ON a.cover_img=b.id WHERE a.id = ${param.id} and a.status <> 3`)
     let query2 = db.query(`SELECT * FROM blog_article_category AS a LEFT JOIN blog_category AS b ON a.category_id=b.id WHERE a.article_id=${param.id}`)
     Promise.all([query1, query2]).then((data) => {
         res.send(new result({
@@ -183,7 +184,7 @@ router.post('/add', (req, res, next) => {
         summary = param.summary.replace(/\'/g, '\'\'').replace(/\\/g, "&#92;");
     } else {
         //param.content
-        summary = param.content.replace(/\n[\s]*/g, '').replace(/<code.*?code>/g, '').replace(/<[^<>]*>/g, '').substr(0, 300) + "..."
+        summary = param.content.replace(/\n[\s]*/g, '').replace(/<code.*?code>/g, '').replace(/<[^<>]*>/g, '').substr(0, 150) + "..."
         summary = summary.replace(/\'/g, '\'\'').replace(/\\/g, "&#92;");
     }
     if(param.id) {
