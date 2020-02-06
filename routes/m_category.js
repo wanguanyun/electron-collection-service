@@ -71,7 +71,7 @@ router.post('/all', (req, res, next) => {
     ON a.id = b.category_id
     WHERE a.status = 1 
     and a.name Like '%${param.queryName}%'
-    GROUP BY a.name
+    GROUP BY a.name ORDER BY article_count DESC
     LIMIT ${param.pageSize*(param.currentPage-1)},${param.pageSize}`)
     }
     Promise.all([query1, query2]).then((data) => {

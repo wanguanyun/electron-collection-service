@@ -107,6 +107,20 @@ router.post('/all', (req, res, next) => {
     })
 })
 
+//置顶文章查询(四个)
+router.get('/top', (req, res, next) => {
+  db.query(`SELECT * FROM (SELECT * FROM (SELECT a.id,a.title,a.author,a.tag,a.release_date,a.status,
+      a.if_front,a.cover_img,a.summary,a.if_allow_comment,GROUP_CONCAT(DISTINCT(b.category_id)) AS category_id,
+      GROUP_CONCAT(DISTINCT(b.name)) AS category FROM blog_article AS a 
+      LEFT JOIN (SELECT aa.*,bb.name FROM blog_article_category AS aa LEFT JOIN blog_category AS bb ON aa.category_id = bb.id) AS b ON a.id = b.article_id
+      WHERE a.status <> 3 and a.if_front = 1 GROUP BY a.id) AS c ORDER BY c.release_date DESC LIMIT 0,4) AS d LEFT JOIN (SELECT id AS img_id,name,file_type,net_url FROM blog_img) 
+      AS e ON d.cover_img = e.img_id`).then((data) => {
+      res.send(new result(data.rows, 'success', 200))
+  }).catch((err) => {
+      res.send(new result(null, err, 500))
+  })
+})
+
 //文章详情查询
 router.post('/info', (req, res, next) => {
     const param = req.body;

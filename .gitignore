@@ -1,3 +1,4 @@
 node_modules/
 config/db.js
 upload/*
+wgyblog_upload/*
