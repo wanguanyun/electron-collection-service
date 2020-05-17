@@ -143,7 +143,7 @@ router.post('/random', (req, res, next) => {
 router.post('/info', (req, res, next) => {
   const param = req.body;
   let query1 = db.query(`SELECT a.id AS id,a.release_date AS release_date,a.title AS title,a.content AS content,a.tag AS tag,a.status AS status,a.if_front AS if_front,a.cover_img AS cover_img,
-    a.summary AS summary,a.if_allow_comment AS if_allow_comment, b.id AS img_id,b.name AS name,b.net_url AS net_url,b.file_type AS file_type
+    a.summary AS summary,a.if_allow_comment AS if_allow_comment,a.if_approval_comment AS if_approval_comment, b.id AS img_id,b.name AS name,b.net_url AS net_url,b.file_type AS file_type
      FROM blog_article AS a LEFT JOIN blog_img AS b ON a.cover_img=b.id WHERE a.id = ${param.id} and a.status <> 3`)
   let query2 = db.query(`SELECT * FROM blog_article_category AS a LEFT JOIN blog_category AS b ON a.category_id=b.id WHERE a.article_id=${param.id}`)
   Promise.all([query1, query2]).then((data) => {
