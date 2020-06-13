@@ -146,10 +146,12 @@ router.post('/info', (req, res, next) => {
     a.summary AS summary,a.if_allow_comment AS if_allow_comment,a.if_approval_comment AS if_approval_comment, b.id AS img_id,b.name AS name,b.net_url AS net_url,b.file_type AS file_type
      FROM blog_article AS a LEFT JOIN blog_img AS b ON a.cover_img=b.id WHERE a.id = ${param.id} and a.status <> 3`)
   let query2 = db.query(`SELECT * FROM blog_article_category AS a LEFT JOIN blog_category AS b ON a.category_id=b.id WHERE a.article_id=${param.id}`)
-  Promise.all([query1, query2]).then((data) => {
+  let query3 = db.query(`SELECT COUNT(*) as total FROM blog_comment WHERE article_id = ${param.id} AND STATUS = 1`)
+  Promise.all([query1, query2, query3]).then((data) => {
     res.send(new result({
       info: data[0].rows && data[0].rows.length ? data[0].rows[0] : null,
-      category: data[1].rows || []
+      category: data[1].rows || [],
+      commentTotal: data[2].rows && data[2].rows.length === 1 ? data[2].rows[0].total : 0
     }, 'success', 200))
   }).catch((err) => {
     res.send(new result(null, err, 500))
